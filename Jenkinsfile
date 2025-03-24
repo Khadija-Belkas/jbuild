@@ -1,72 +1,46 @@
-pipeline {
-    agent any
-    
-    environment {
-        // Configuration Docker - TOUTES LES VARIABLES ICI
-        DOCKER_REGISTRY = 'registry.gitlab.com'
-        IMAGE_NAME = 'xavki/presentations-jenkins'
-        HOST_PORT = '9050'  // PORT DÉFINITIF FIXÉ ICI
-        CONTAINER_NAME = "run-${env.BUILD_ID}"
+def pipelineContext = [:]
+node {
+
+    def registryProjet = 'registry.gitlab.com/xavki/presentations-jenkins'
+    def IMAGE = "${registryProjet}:version-${env.BUILD_ID}"
+    def CONTAINER_NAME = "run-${env.BUILD_ID}"
+    def PORT = 9080 // ✅ Nouveau port ici
+
+    echo "✅ Jenkinsfile mis à jour - PORT utilisé = ${PORT}"
+    echo "✅ IMAGE = ${IMAGE}"
+    echo "✅ CONTAINER = ${CONTAINER_NAME}"
+
+    stage('Clone') {
+        checkout scm
     }
 
-    stages {
-        stage('Nettoyage Complet') {
-            steps {
-                script {
-                    // 1. Force l'arrêt de tous les conteneurs utilisant le port
-                    bat """
-                        echo "=== NETTOYAGE DES CONTENEURS EXISTANTS ==="
-                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "publish=${HOST_PORT}"') DO (
-                            echo "Arrêt du conteneur %%i"
-                            docker stop %%i
-                            docker rm %%i
-                        )
-                        
-                        // 2. Supprime le conteneur actuel s'il existe
-                        docker stop ${CONTAINER_NAME} || echo "Aucun conteneur à arrêter"
-                        docker rm ${CONTAINER_NAME} || echo "Aucun conteneur à supprimer"
-                    """
-                }
-            }
-        }
+    def img = null
 
-        stage('Build') {
-            steps {
-                script {
-                    // Build avec tag unique
-                    docker.build("${DOCKER_REGISTRY}/${IMAGE_NAME}:version-${env.BUILD_ID}", '.')
-                }
-            }
-        }
+    stage('Build') {
+        img = docker.build(IMAGE, '.')
+    }
 
-        stage('Run') {
-            steps {
-                script {
-                    // Lancement avec vérification
-                    bat """
-                        echo "=== LANCEMENT DU CONTENEUR SUR LE PORT ${HOST_PORT} ==="
-                        docker run -d \\
-                            --name ${CONTAINER_NAME} \\
-                            -p ${HOST_PORT}:80 \\
-                            ${DOCKER_REGISTRY}/${IMAGE_NAME}:version-${env.BUILD_ID}
-                        
-                        echo "=== VÉRIFICATION ==="
-                        timeout(time: 5, unit: 'SECONDS') {
-                            bat "curl http://localhost:${HOST_PORT} || echo \"Le conteneur ne répond pas encore\""
-                        }
-                    """
-                }
-            }
+    stage('Run') {
+        // 🔥 Arrêter et supprimer tout conteneur qui utilise déjà le port 9080
+        bat """
+        FOR /F "tokens=*" %%i IN ('docker ps -q --filter "publish=${PORT}"') DO (
+            docker stop %%i
+            docker rm %%i
+        )
+        """
+
+        // 🚀 Lancer le nouveau conteneur avec la bonne image et le bon port
+        bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}"
+    }
+
+    stage('Push') {
+        docker.withRegistry('https://registry.gitlab.com', 'reg1') {
+            img.push('latest')
+            img.push()
         }
     }
 
-    post {
-        always {
-            echo "=== NETTOYAGE FINAL ==="
-            bat """
-                docker stop ${CONTAINER_NAME} || echo "Échec arrêt conteneur"
-                docker rm ${CONTAINER_NAME} || echo "Échec suppression conteneur"
-            """
-        }
+    stage('Done') {
+        echo "✅ Application disponible sur : http://localhost:${PORT}"
     }
 }
