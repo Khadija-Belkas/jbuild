@@ -19,18 +19,21 @@ node {
     stage('Build') {
         img = docker.build(IMAGE, '.')
     }
-
     stage('Run') {
-        // 🔥 Arrêter et supprimer tout conteneur qui utilise déjà le port 9060
+    steps {
+        // Arrêter et supprimer un ancien conteneur s’il existe
         bat """
-        FOR /F "tokens=*" %%i IN ('docker ps -q --filter "publish=${PORT}"') DO (
-            docker stop %%i
-            docker rm %%i
-        )
+        docker stop run-${BUILD_ID} || exit 0
+        docker rm run-${BUILD_ID} || exit 0
+        docker run -d --name run-${BUILD_ID} -p 9061:80 ${IMAGE}
         """
 
-        // 🚀 Lancer le nouveau conteneur avec la bonne image et le bon port
-        bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}"
+        // Petit délai pour que le conteneur démarre correctement
+        sleep time: 2, unit: 'SECONDS'
+
+        // Tester que l’application répond bien
+        bat 'curl http://localhost:9061'
+        }
     }
 
     stage('Push') {
