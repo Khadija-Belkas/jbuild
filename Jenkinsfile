@@ -4,7 +4,7 @@ node {
     def registryProjet = 'registry.gitlab.com/xavki/presentations-jenkins'
     def IMAGE = "${registryProjet}:version-${env.BUILD_ID}"
     def CONTAINER_NAME = "run-${env.BUILD_ID}"
-    def PORT = 9060 // ✅ Nouveau port ici
+    def PORT = 9061 // Port mis à jour pour cohérence avec docker run
 
     echo "✅ Jenkinsfile mis à jour - PORT utilisé = ${PORT}"
     echo "✅ IMAGE = ${IMAGE}"
@@ -19,21 +19,20 @@ node {
     stage('Build') {
         img = docker.build(IMAGE, '.')
     }
+
     stage('Run') {
-    steps {
         // Arrêter et supprimer un ancien conteneur s’il existe
         bat """
-        docker stop run-${BUILD_ID} || exit 0
-        docker rm run-${BUILD_ID} || exit 0
-        docker run -d --name run-${BUILD_ID} -p 9061:80 ${IMAGE}
+        docker stop ${CONTAINER_NAME} || exit 0
+        docker rm ${CONTAINER_NAME} || exit 0
+        docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}
         """
 
-        // Petit délai pour que le conteneur démarre correctement
+        // Laisser le conteneur démarrer
         sleep time: 2, unit: 'SECONDS'
 
-        // Tester que l’application répond bien
-        bat 'curl http://localhost:9061'
-        }
+        // Tester que ça fonctionne
+        bat "curl http://localhost:${PORT}"
     }
 
     stage('Push') {
