@@ -4,7 +4,7 @@ node {
     def registryProjet = 'registry.gitlab.com/xavki/presentations-jenkins'
     def IMAGE = "${registryProjet}:version-${env.BUILD_ID}"
     def CONTAINER_NAME = "run-${env.BUILD_ID}"
-    def PORT = 9080 // ✅ Nouveau port ici
+    def PORT = 9060 // ✅ Nouveau port ici
 
     echo "✅ Jenkinsfile mis à jour - PORT utilisé = ${PORT}"
     echo "✅ IMAGE = ${IMAGE}"
@@ -21,7 +21,7 @@ node {
     }
 
     stage('Run') {
-        // 🔥 Arrêter et supprimer tout conteneur qui utilise déjà le port 9080
+        // 🔥 Arrêter et supprimer tout conteneur qui utilise déjà le port 9060
         bat """
         FOR /F "tokens=*" %%i IN ('docker ps -q --filter "publish=${PORT}"') DO (
             docker stop %%i
