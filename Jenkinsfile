@@ -15,9 +15,11 @@ node {
 		}
 	
 		stage('Run') {
-					img.withRun("--name run-$BUILD_ID -p 9000:80") { c ->
-						sh 'curl localhost'
-          }					
+			steps {
+    			bat 'docker stop run-9 || exit 0'
+    			bat 'docker rm run-9 || exit 0'
+    			bat 'docker run -d --name run-9 -p 9000:80 registry.gitlab.com/xavki/presentations-jenkins:version-9'
+          			}					
 		}
 
 		stage('Push') {
