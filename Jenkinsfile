@@ -29,6 +29,7 @@ node {
 
         // 🚀 Étape 2 : Lancer le nouveau conteneur avec la bonne image et un nom unique
         bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}"
+    
     }
 
     stage('Push') {
