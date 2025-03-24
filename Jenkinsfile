@@ -23,8 +23,6 @@ node {
     stage('Run') {
         // Arrêter et supprimer un ancien conteneur s’il existe
         bat """
-        docker stop ${CONTAINER_NAME} || exit 0
-        docker rm ${CONTAINER_NAME} || exit 0
         docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}
         """
 
