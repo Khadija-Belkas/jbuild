@@ -19,15 +19,15 @@ node {
     }
 
     stage('Run') {
-        // 1. Supprimer tous les conteneurs qui utilisent déjà le port 9000
+        // 🧹 Étape 1 : Supprimer n'importe quel conteneur qui utilise le port 9000
         bat '''
-        for /f "tokens=1" %%i in ('docker ps -q --filter "publish=9000"') do (
+        FOR /F "tokens=*" %%i IN ('docker ps -q --filter "publish=9000"') DO (
             docker stop %%i
             docker rm %%i
         )
         '''
 
-        // 2. Lancer le nouveau conteneur proprement avec un nom unique
+        // 🚀 Étape 2 : Lancer le nouveau conteneur avec la bonne image et un nom unique
         bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}"
     }
 
