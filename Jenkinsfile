@@ -19,9 +19,16 @@ node {
     }
 
     stage('Run') {
-        bat "docker stop run-13 || exit 0"
-        bat "docker rm run-13 || exit 0"
-        bat "docker run -d --name run-13 -p 9000:80 registry.gitlab.com/xavki/presentations-jenkins:version-13"
+        // 1. Supprimer tous les conteneurs qui utilisent déjà le port 9000
+        bat '''
+        for /f "tokens=1" %%i in ('docker ps -q --filter "publish=9000"') do (
+            docker stop %%i
+            docker rm %%i
+        )
+        '''
+
+        // 2. Lancer le nouveau conteneur proprement avec un nom unique
+        bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}"
     }
 
     stage('Push') {
