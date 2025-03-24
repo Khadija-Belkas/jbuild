@@ -4,7 +4,7 @@ node {
     def registryProjet = 'registry.gitlab.com/xavki/presentations-jenkins'
     def IMAGE = "${registryProjet}:version-${env.BUILD_ID}"
     def CONTAINER_NAME = "run-${env.BUILD_ID}"
-    def PORT = 9000
+    def PORT = 9080 // 👈 ici
 
     echo "IMAGE = ${IMAGE}"
 
@@ -19,9 +19,9 @@ node {
     }
 
     stage('Run') {
-        // 🧹 Étape 1 : Supprimer n'importe quel conteneur qui utilise le port 9000
+        // 🧹 Étape 1 : Supprimer n'importe quel conteneur qui utilise le port 9080
         bat '''
-        FOR /F "tokens=*" %%i IN ('docker ps -q --filter "publish=9000"') DO (
+        FOR /F "tokens=*" %%i IN ('docker ps -q --filter "publish=9080"') DO (
             docker stop %%i
             docker rm %%i
         )
