@@ -19,12 +19,9 @@ node {
     }
 
     stage('Run') {
-        // Stop & Remove the container if it exists (to avoid port conflict)
-        bat "docker stop ${CONTAINER_NAME} || exit 0"
-        bat "docker rm ${CONTAINER_NAME} || exit 0"
-
-        // Run the container using the freshly built image
-        bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT}:80 ${IMAGE}"
+        bat "docker stop run-13 || exit 0"
+        bat "docker rm run-13 || exit 0"
+        bat "docker run -d --name run-13 -p 9000:80 registry.gitlab.com/xavki/presentations-jenkins:version-13"
     }
 
     stage('Push') {
